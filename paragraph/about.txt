@@ -9,7 +9,7 @@ Version: 1.0.0
 
 Applies to pages with content type of `HTML`.
 
-### Before
+#### Before
 
 ~~~ .html
 Lorem ipsum dolor sit amet.
