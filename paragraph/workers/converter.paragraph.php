@@ -34,7 +34,7 @@ class Paragraph {
     public function run($text) {
         if( ! trim($text)) return $text;
         $_ = '#(<\/?(?:' . $this->ignore . '|p)(?:' . $this->z . ')|<!--[\s\S]*?-->)#';
-        $text = str_replace(array("\r\n", "\r"), "\n", $text);
+        $text = str_replace(array("\r\n", "\r"), "\n", $text) . "\n\n";
         $text = $this->br($text);
         $parts = preg_split($_, $text, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
         $text = "";
