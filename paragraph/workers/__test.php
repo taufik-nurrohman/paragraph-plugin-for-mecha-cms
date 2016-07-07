@@ -57,11 +57,27 @@ var foo = 'bar';
 var baz = 'qux';
 </script>
 
+<div class="empty">
+
+</div>
+
+<p class="empty">
+
+</p>
+
+<script src="foo.js"></script>
+
 <pre><code>This is some text.
 
     Should be ignored.
 
 This is some text.</code></pre>
+
+<textarea>
+html {}
+
+body {}
+</textarea>
 
 <h1>
 This is some text.
@@ -359,7 +375,8 @@ function debug($text) {
     $s = '&lt;span style=&quot;display:inline-block;width:100%;margin:1px 0 0;color:black;background-color:';
     $text = preg_replace('#<p(>|\s[^<>]*?>)([\s\S]*?)<\/p>#', $s . 'green;&quot;&gt;<p$1$2</p>&lt;/span&gt;', $text);
     $text = preg_replace('#<(' . $parser->ignore . ')(>|\s[^<>]*?>)([\s\S]*?)<\/\1>#', $s . 'gray;&quot;&gt;<$1$2$3</$1>&lt;/span&gt;', $text);
-    $text = preg_replace('#<!--([\s\S]*?)-->#', '&lt;span style=&quot;display:inline-block;width:100%;margin:1px 0 0;background-color:gray;color:black;&quot;&gt;<!--$1-->&lt;/span&gt;', $text);
+    $text = preg_replace('#<!--([\s\S]*?)-->#', $s . 'gray;&quot;&gt;<!--$1-->&lt;/span&gt;', $text);
+    $text = str_replace('<br>', $s . 'yellow;width:auto;&quot;&gt;<br>&lt;/span&gt;', $text);
     $text = htmlspecialchars($text);
     $text = str_replace(array('&amp;lt;', '&amp;gt;', '&amp;quot;'), array('<', '>', '"'), $text);
     return $text;

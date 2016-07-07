@@ -20,22 +20,21 @@
 class Paragraph {
 
     // Skip parsing process if we are in these HTML tag(s)
-    public $ignore = 'h[1-6]|kbd|math|pre|script|style';
+    public $ignore = 'h[1-6]|kbd|math|pre|script|style|textarea';
 
     // May or may not contain paragraph tag(s)
     public $auto = 'dd|div|(?:fig)?caption|li|td';
 
-    protected $x = "\x1A";
     protected $z = '>|\s[^<>]*?>';
+    protected $zz = ' *\/?>|\s[^<>]*? *\/?>';
     protected $b = 'blockquote|div|p';
     protected $i = 'a|abbr|acronym|b|basefont|bdo|big|blink|button|cite|code|del|dfn|em|font|i|img|input|ins|kbd|listing|mar(?:k|quee)|nextid|nobr|q|r[pt]|ruby|s|samp|select|small|spacer|span|strike|strong|su[bp]|svg|textarea|time|tt|u|var|w?br|xm';
 
     // Run converter ...
     public function run($text) {
         if( ! trim($text)) return $text;
-        $_ = '#(<\/?(?:' . $this->ignore . ')(?:' . $this->z . ')|<!--(?:[\s\S]*?)-->)#';
+        $_ = '#(<\/?(?:' . $this->ignore . '|p)(?:' . $this->z . ')|<!--[\s\S]*?-->)#';
         $text = str_replace(array("\r\n", "\r"), "\n", $text);
-        $text = $this->x($text);
         $text = $this->br($text);
         $parts = preg_split($_, $text, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
         $text = "";
@@ -45,7 +44,6 @@ class Paragraph {
                 $text .= $v;
                 continue;
             }
-            $v = $this->v($v);
             if($v[0] === '<' && substr($v, -1) === '>') {
                 $x = isset($v[1]) && ($v[1] === '/' || $v[1] === '!') ? 0 : 1;
                 $text .= $v; // this is a HTML tag ...
@@ -74,60 +72,19 @@ class Paragraph {
         return $this->fix(implode("\n\n", $text));
     }
 
-    // Escape ...
-    protected function x($text) {
-        return str_replace(
-            array(
-                '<p>',
-                '<p ',
-                '</p>'
-            ),
-            array(
-                '<' . $this->x . 'p>',
-                '<' . $this->x . 'p ',
-                '</' . $this->x . 'p>'
-            ),
-        $text);
-    }
-
-    // Un-escape ...
-    protected function v($text) {
-        return str_replace(
-            array(
-                '<' . $this->x . 'p>',
-                '<' . $this->x . 'p ',
-                '</' . $this->x . 'p>'
-            ),
-            array(
-                '<p>',
-                '<p ',
-                '</p>'
-            ),
-        $text);
-    }
-
     // Convert `<br>` tag(s) ...
     protected function br($text) {
-        return preg_replace('#\s*<br(' . str_replace('>', ' *\/?>', $this->z) . ')\s*#', "\n", $text);
+        return preg_replace('#\s*<br(' . $this->zz . ')\s*#', "\n", $text);
     }
 
     // Fix ...
     protected function fix($text) {
-        return preg_replace(
-            array(
-                '#\s*(<\/p>)(?:\s*<\/p>)+|(<p(?:' . $this->z . '))\s*(?:<p(?:' . $this->z . ')\s*)+#',
-                '#<(' . $this->auto . ')(' . $this->z . ')\n*<p(?:' . $this->z . ')([^\n]*?)<\/p>\n*<\/\1>#'
-            ),
-            array(
-                '$1$2',
-                '<$1$2$3</$1>'
-            ),
-        $text);
+        return preg_replace('#<(' . $this->auto . ')(' . $this->z . ')\n*<p(?:' . $this->z . ')([^\n]*?)<\/p>\n*<\/\1>#', '<$1$2$3</$1>', $text);
     }
 
     // Tidy ...
     protected function tidy($text) {
-        return str_replace(
+        return trim(str_replace(
             '<br>',
             "<br>\n",
             preg_replace(
@@ -136,23 +93,25 @@ class Paragraph {
                     '#\n*<(\/?(?:' . $this->i . '))(' . $this->z . ')\n*#',
                     '#(^|[^>])\n+\s*<#',
                     '#>\n+\s*([^<]|$)#',
-                    '#\n*<(' . $this->ignore . ')>\n*([\s\S]*?)\n*<\/\1>\n*#',
+                    '#\n*<(' . $this->ignore . ')(' . $this->z . ')\n*([\s\S]*?)\n*<\/\1>\n*#',
                     '#><(hr|img|input|svg)(' . $this->z . ')<(?!\/)#',
                     '#<\/(' . $this->ignore . ')>\n+<(' . $this->ignore . ')(' . $this->z . ')#',
-                    '#<(script|style)(' . $this->z . ')([\s\S]*?)<\/\1>#'
+                    '#<(script|style)(' . $this->z . ')\n*([\s\S]+?)\n*<\/\1>#',
+                    '#<([-:\w]+?)(' . $this->z . ')\s*<\/\1>#'
                 ),
                 array(
                     "\n\n<$1$2\n\n",
                     '<$1$2',
                     '$1<',
                     '>$1',
-                    "\n<$1>$2</$1>\n",
+                    "\n<$1$2$3</$1>\n",
                     ">\n<$1$2\n<",
                     "</$1>\n<$2$3",
-                    "<$1$2\n$3\n</$1>"
+                    "<$1$2\n$3\n</$1>",
+                    '<$1$2</$1>'
                 ),
             $text)
-        );
+        ));
     }
 
 }
